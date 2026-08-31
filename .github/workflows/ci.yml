@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cargo Check
+        run: cargo check
+      - name: Validate Structural Assets
+        run: |
+          test -f LICENSE
+          test -f LICENSE-CC-BY-SA-4.0
+          test -f NOTICE
+          test -f CLA.md
+          test -f CLA-signatures.md
+          test -f AGENTS.md
+          echo "All structural and licensing checks passed."

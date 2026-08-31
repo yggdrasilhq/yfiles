@@ -1,0 +1,24 @@
+{
+  "name": "@ygghq/yfiles",
+  "version": "0.1.0",
+  "description": "yfiles - visual file manager on libyggterm, delivered by ynpm",
+  "bin": {
+    "yfiles": "bin/yfiles"
+  },
+  "files": [
+    "bin/",
+    "finalize.mjs"
+  ],
+  "scripts": {
+    "postinstall": "node ./finalize.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yggdrasilhq/yfiles.git"
+  },
+  "license": "GPL-3.0-or-later",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
