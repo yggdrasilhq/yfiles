@@ -11,26 +11,23 @@ Do not introduce conflicting licence statements. All files under `docs/` follow 
 
 ## 1. Core Architecture & Product Invariants
 
-1. **Tier A libyggterm Surface Architecture:**
-   - Follows `libyggterm-surfaces/SKILL.md` (OSC 7717 + loopback HTTP control server).
-   - Emits pure declarative schemas:
-     - **Main Viewport:** Document surface (`"placement": "viewport"`) rendering the active folder's breadcrumb bar, toolbar, file grid/list rows, and status footer.
-     - **Sidebar Panel:** Contributed right-hand rail (`AppPaneRailBody`) hosting Places (Home, Root, Mounts, Bookmarks), Quick Access, and File Details/Preview.
-2. **KDE Dolphin / Windows Explorer Ergonomics:**
-   - **Breadcrumb Navigation:** Clickable path segments with instant keyboard navigation (`Ctrl+L` / `Alt+D` to edit path).
-   - **Flexible Views:** Detailed list view (Name, Size, Modified, Mode), Compact list view, and Icon/Grid view.
-   - **Split / Dual-Pane Capability:** Fast side-by-side directory comparisons and transfers (`F3` split toggle).
-   - **Places & Devices:** Quick bookmarks for standard user directories (`~/Downloads`, `~/Documents`, `~/projects`), mounted drives, and removable storage.
-   - **Status Footer:** Live display of item counts, selected items, total selected size, and filesystem free space.
-3. **Safe & Deterministic File Operations:**
-   - Default deletion moves files to OS Trash (`gio trash` / `~/.local/share/Trash`) with an explicit undo stack.
-   - Permanent deletion requires deliberate `--permanent` / `Shift+Delete` flags with confirmation.
-   - Bulk rename with pattern matching, replacement previews, and sequence counters.
-   - In-place terminal spawn: drop directly to an interactive shell or agent session in the current folder (`F4`).
+1. **Tier A libyggterm Site (browser = yggterm, glue = libyggterm, site = yfiles):**
+   - Follows `libyggterm-surfaces/SKILL.md` (OSC 7717 `sidebar ; declare` + loopback `GET /pane/{doc,places,preview}` + `POST /action`, `GET /ping` liveness + `document_version` stamp). Host-resident `yfiles --daemon` at `~/.yggterm/yfiles/` (`control-url`, `session.json`); thin client `yfiles [PATH]` ensures daemon, `POST /open` with client-cwd-resolved path, emits declare, heartbeat `~4s`.
+   - Declares **viewport `doc`** (browse list OR Picasa image carousel) + **rail `places`** + **rail `preview`** — `AppPaneRailBody` renders with generic widgets (`section`, `toolbar`, `list-row`, `search-box`, `tabs`, `label`, `markdown`, `text-input`, `footer`). No `F3` split, no `F4` terminal — browser already ships splits/terminals; two folders = two `yfiles` rows split by `yggterm`.
+2. **Dolphin/Explorer Core (basic file manager only):**
+   - **Breadcrumbs:** Clickable segments (`/`, `home`, `user`, …) + `↑` parent + `Ctrl+L` address bar with `~` expansion.
+   - **Browse:** dirs-first `list-row` details (Name, Size, Modified, Kind/mime via `mime_guess` + `humansize`), `search-box` filter, `tabs` sort (name/size/modified/kind), `Show hidden` toggle.
+   - **Picasa viewer:** Image open (`jpg/jpeg/png/gif/webp/bmp/svg`, `image/*`) → viewport `markdown` `![…](file://)` large preview + `‹`/`›` + filmstrip `list-row`s; preview pane mirrors.
+   - **Places & Devices:** `section "Places"` (Home, Root, Documents/Downloads/Pictures/Videos when present) + `section "Devices"` (mounts from `/proc/mounts`) + `section "Tabs"` (open folders, `+`/`✕`) + `Recent`.
+   - **Preview & Properties:** `section card:true "Preview"` (image thumbnail or type label) + inspect labels (Name/Path/Type/Size/Modified/Mode) + `Actions` toolbar (Rename/Trash). Footers: viewport (count + free via `statvfs`), preview (full path).
+3. **Safe & Deterministic File Operations (OS Trash, not a private stack):**
+   - `Delete`/`🗑` → `trash` crate → freedesktop Trash (`~/.local/share/Trash/files`+`info` or `.Trash-$UID` per filesystem; `gio trash --list` to see, file manager to restore). No `Shift+Delete` permanent, no private undo stack.
+   - `＋ New folder` → `text-input` → `mkdir -p`; `F2` / right-click `Rename` → in-place `list-row rename` (`rename:<path>` value, `Enter` apply / `Esc` cancel, slash-rejecting sanitizer).
+   - Non-image files delegate to `yedit`/`xdg-open` via selection; headless `move` covers batch.
 4. **Deep Observability with ytrace:**
-   - Built-in `ytrace` probes record directory scan latencies, metadata extraction times, thumbnail generation intervals, and schema rendering cycles.
-5. **Headless Agent Orchestration:**
-   - First-class agent CLI verbs allow AI agents to navigate directories, inspect metadata, batch select, and execute file operations deterministically with structured JSON outputs.
+   - Wall probes `yfiles/dir-scan`, `file-op`, `trash-op` + cpu `yfiles/render`; headless verbs and `POST /action` share the same `fs_engine` so headed/headless cannot diverge.
+5. **Headless Agent Orchestration (deterministic JSON):**
+   - Same `fs_engine` scan/inspect/trash/mkdir/rename/move as the GUI; every verb prints pretty JSON `{ok, …}` — the agent truth and the GUI truth are one function.
 
 ---
 

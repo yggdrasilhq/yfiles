@@ -13,14 +13,14 @@
 
 `yfiles` solves a fundamental problem: managing files on remote or headless Linux machines is traditionally limited to text-only commands or heavy remote desktop tools (VNC, RDP).
 
-Built on **libyggterm**, `yfiles` delivers the visual power and productivity of desktop file managers like KDE Dolphin and Windows Explorer directly through your terminal connection:
-- **Visual Breadcrumbs & Paths:** Clickable navigation, quick history jumping, and keyboard address bar (`Ctrl+L`).
-- **Multiple Layout Modes:** Details table with sortable columns (Name, Size, Modified, Permissions), Compact list, and Icon Grid.
-- **Places & Devices Sidebar:** Quick bookmarks for Home, Drives, Bookmarks, and Recent Folders.
-- **Safe by Default:** Move to trash with undo capability; permanent delete requires explicit confirmation.
-- **Powerful File Operations:** Bulk renaming with regex substitution, file attribute inspector, recursive disk usage breakdown, and instant terminal drop (`F4`).
-- **Autonomous Agent Control:** AI agents can query directories, inspect attributes, and manipulate files with deterministic JSON commands.
-- **Deep Observability:** In-process `ytrace` microsecond probes for directory indexing and file operations.
+Built on **libyggterm** (Tier A site — `yggterm` is the browser, `libyggterm` the glue, `yfiles` the site), `yfiles` delivers Dolphin/Explorer ergonomics over any SSH or local terminal:
+- **Visual Breadcrumbs & Paths:** Clickable segments, parent `↑`, and keyboard address bar (`Ctrl+L`) with `~` expansion.
+- **Browse + Picasa Carousel:** Details list (Name, Size, Modified, Kind, mime) with dirs-first sorting; image open → full-bleed viewer via `markdown` `![…](file://)` with ←/→ stepping and filmstrip. Other files delegate to `yedit`/`xdg-open`.
+- **Places & Tabs Sidebar (partitioned):** Places (Home, Root, Documents/Downloads/Pictures/Videos, Devices from `/proc/mounts`), Tabs (open folders, `+` to add, `✕` to close), Recent.
+- **Preview & Properties Sidebar (partitioned):** Thumbnail (`markdown` image when image), labels (Name/Path/Type/Size/Modified/Mode), Actions (Rename/Trash). Viewer mode mirrors carousel preview.
+- **Safe by Default:** `Delete` / `🗑` → OS Trash (`~/.local/share/Trash` or per-filesystem `.Trash-$UID`, restores via `gio trash --list` / file manager) — no private undo stack. `New folder` creates `mkdir -p`.
+- **Autonomous Agent Control:** Deterministic JSON verbs (`list`, `inspect`, `trash`, `mkdir`, `rename`, `move`) share `fs_engine` with the GUI, so headed/headless cannot diverge.
+- **Deep Observability:** In-process `ytrace` probes (`yfiles/dir-scan`, `file-op`, `trash-op`).
 
 ---
 
@@ -42,14 +42,14 @@ yfiles list --path /home/user/workspace --format json
 
 | Shortcut | Action |
 |---|---|
-| `Ctrl+L` / `Alt+D` | Focus & edit breadcrumb location bar |
-| `F3` | Toggle split dual-pane view |
-| `F4` | Drop to terminal in current directory |
-| `F5` / `Ctrl+R` | Refresh active directory listing |
-| `Delete` | Move selected items to Trash |
-| `Shift+Delete` | Permanently delete selected items |
-| `F2` | In-place bulk or single file rename |
-| `Alt+Enter` | Open Properties & Metadata inspector |
+| `Ctrl+L` | Focus & edit breadcrumb location bar |
+| `Enter` | Open — folder → navigate, image → Picasa viewer, other → select |
+| `Backspace` / `↑` | Ascend to parent directory |
+| `Ctrl+H` | Toggle hidden files (dotfiles) visibility |
+| `F5` / `↻` | Refresh active directory listing |
+| `F2` | In-place rename ( `rename:<path>` field, `Enter` apply / `Esc` cancel ) |
+| `Delete` / `🗑` | Move selected / row item to OS Trash |
+| `←` / `→` | Carousel Prev / Next (in viewer); `← Back` returns to browse |
 
 ---
 
