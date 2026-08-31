@@ -20,6 +20,28 @@ pub struct ViewerState {
     pub index: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ViewMode {
+    Details,
+    Icons,
+}
+
+impl ViewMode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ViewMode::Details => "details",
+            ViewMode::Icons => "icons",
+        }
+    }
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "details" => Some(ViewMode::Details),
+            "icons" => Some(ViewMode::Icons),
+            _ => None,
+        }
+    }
+}
+
 /// Host-resident file manager state.
 pub struct Store {
     pub current_path: PathBuf,
@@ -27,6 +49,7 @@ pub struct Store {
     pub selected: Option<PathBuf>,
     pub show_hidden: bool,
     pub sort: SortKind,
+    pub view_mode: ViewMode,
     pub viewer: Option<ViewerState>,
     pub recent: Vec<PathBuf>,
     pub epoch: u64,
@@ -45,6 +68,7 @@ impl Store {
             selected: None,
             show_hidden: false,
             sort: SortKind::Name,
+            view_mode: ViewMode::Details,
             viewer: None,
             recent: Vec::new(),
             epoch: 1,
@@ -92,6 +116,9 @@ impl Store {
         if let Some(sort) = value["sort"].as_str().and_then(SortKind::parse) {
             self.sort = sort;
         }
+        if let Some(vm) = value["view_mode"].as_str().and_then(ViewMode::parse) {
+            self.view_mode = vm;
+        }
         if let Some(recent) = value["recent"].as_array() {
             self.recent = recent
                 .iter()
@@ -112,6 +139,7 @@ impl Store {
             "tabs": self.tabs.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>(),
             "show_hidden": self.show_hidden,
             "sort": self.sort.as_str(),
+            "view_mode": self.view_mode.as_str(),
             "recent": self.recent.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>(),
             "epoch": self.epoch,
         });
@@ -206,6 +234,12 @@ impl Store {
 
     pub fn set_sort(&mut self, sort: SortKind) {
         self.sort = sort;
+        self.touch();
+        self.persist_session();
+    }
+
+    pub fn set_view_mode(&mut self, mode: ViewMode) {
+        self.view_mode = mode;
         self.touch();
         self.persist_session();
     }

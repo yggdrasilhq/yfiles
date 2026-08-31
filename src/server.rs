@@ -215,7 +215,17 @@ fn browse_schema(pane: &PaneState) -> Value {
         "action": "filter",
     }));
 
-    // Sort tabs
+    // View mode + Sort tabs
+    widgets.push(json!({
+        "kind": "tabs",
+        "id": "view_mode",
+        "action": "set_view_mode",
+        "active": store.view_mode.as_str(),
+        "tabs": [
+            { "id": "details", "label": "Details" },
+            { "id": "icons", "label": "Icons" },
+        ],
+    }));
     widgets.push(json!({
         "kind": "tabs",
         "id": "sort",
@@ -242,25 +252,35 @@ fn browse_schema(pane: &PaneState) -> Value {
         let is_selected = store.selected.as_deref() == Some(entry.path.as_path());
         // Choose row action: dir navigates, file opens/selects
         let row_action = if entry.is_dir { "open_path" } else { "open_path" };
+        let subtitle = if entry.is_dir {
+            String::new()
+        } else {
+            // Dolphin details: Size  •  Date (type is already in the badge)
+            if entry.size_display.is_empty() && entry.modified_display.is_empty() {
+                String::new()
+            } else if entry.size_display.is_empty() {
+                entry.modified_display.clone()
+            } else if entry.modified_display.is_empty() {
+                entry.size_display.clone()
+            } else {
+                format!("{}  •  {}", entry.size_display, entry.modified_display)
+            }
+        };
         let mut row = json!({
             "kind": "list-row",
             "id": entry.path.to_string_lossy(),
             "icon": entry.icon,
             "title": entry.name,
-            "subtitle": if entry.is_dir {
-                if entry.name == ".." { "".to_string() } else { "".to_string() }
-            } else {
-                format!("{}  {}  {}", entry.size_display, entry.mime, entry.modified_display)
-            },
+            "subtitle": subtitle,
             "selected": is_selected,
             "row_action": row_action,
             "actions": [
-                { "action": "trash", "label": "🗑", "title": "Move to Trash (Delete)" },
+                { "action": "trash", "label": "icon:trash", "title": "Move to Trash (Delete)" },
             ],
             "menu": [
-                { "action": "rename", "label": "✎  Rename", "title": "Rename (F2)" },
-                { "action": "trash", "label": "🗑  Move to Trash", "title": "Move to Trash" },
-                { "action": "properties", "label": "◧  Properties", "title": "Show properties" },
+                { "action": "rename", "label": "Rename", "title": "Rename (F2)" },
+                { "action": "trash", "label": "Move to Trash", "title": "Move to Trash" },
+                { "action": "properties", "label": "Properties", "title": "Show properties" },
             ],
         });
         // In-place rename field
@@ -354,10 +374,12 @@ fn viewer_schema(viewer: &ViewerState, pane: &PaneState) -> Value {
                 .map(|n| n.to_string_lossy().into_owned())
                 .unwrap_or_default();
             let selected = idx == viewer.index;
+            let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+            let badge = if ext.is_empty() { "·".to_string() } else { ext.chars().take(4).collect::<String>() };
             widgets.push(json!({
                 "kind": "list-row",
                 "id": format!("strip:{}", path.to_string_lossy()),
-                "icon": "image",
+                "icon": format!("file:{badge}"),
                 "title": fname,
                 "selected": selected,
                 "row_action": format!("viewer_jump:{}", path.to_string_lossy()),
@@ -409,7 +431,7 @@ fn places_schema(pane: &PaneState) -> Value {
         widgets.push(json!({
             "kind": "list-row",
             "id": format!("place:{}", path.to_string_lossy()),
-            "icon": if path == home { "folder" } else { "folder" },
+            "icon": "icon:folder",
             "title": label,
             "subtitle": path.to_string_lossy(),
             "selected": selected,
@@ -427,7 +449,7 @@ fn places_schema(pane: &PaneState) -> Value {
             widgets.push(json!({
                 "kind": "list-row",
                 "id": format!("mount:{}", mnt.to_string_lossy()),
-                "icon": "folder",
+                "icon": "icon:folder",
                 "title": label,
                 "subtitle": mnt.to_string_lossy(),
                 "selected": selected,
@@ -453,17 +475,17 @@ fn places_schema(pane: &PaneState) -> Value {
         widgets.push(json!({
             "kind": "list-row",
             "id": format!("tab:{}", tab.to_string_lossy()),
-            "icon": "folder",
+            "icon": "icon:folder",
             "title": name,
             "subtitle": tab.to_string_lossy(),
             "selected": selected,
             "row_action": format!("switch_tab:{}", tab.to_string_lossy()),
             "actions": [
-                { "action": format!("close_tab:{}", tab.to_string_lossy()), "label": "✕", "title": "Close tab" },
+                { "action": format!("close_tab:{}", tab.to_string_lossy()), "label": "icon:close", "title": "Close tab" },
             ],
             "menu": [
-                { "action": format!("switch_tab:{}", tab.to_string_lossy()), "label": "↗ Open", "title": "Open this tab" },
-                { "action": format!("close_tab:{}", tab.to_string_lossy()), "label": "✕ Close", "title": "Close tab" },
+                { "action": format!("switch_tab:{}", tab.to_string_lossy()), "label": "Open", "title": "Open this tab" },
+                { "action": format!("close_tab:{}", tab.to_string_lossy()), "label": "Close", "title": "Close tab" },
             ],
         }));
     }
@@ -479,7 +501,7 @@ fn places_schema(pane: &PaneState) -> Value {
             widgets.push(json!({
                 "kind": "list-row",
                 "id": format!("recent:{}", path.to_string_lossy()),
-                "icon": "folder",
+                "icon": "icon:folder",
                 "title": name,
                 "subtitle": path.to_string_lossy(),
                 "row_action": format!("navigate:{}", path.to_string_lossy()),
@@ -679,6 +701,16 @@ fn handle_action(state: &Mutex<PaneState>, body: &Value) -> Value {
                 .unwrap_or("name");
             if let Some(sort) = SortKind::parse(sort_str) {
                 pane.store.set_sort(sort);
+            }
+        }
+        "set_view_mode" => {
+            let vm_str = values["view_mode"]
+                .as_str()
+                .or(values["value"].as_str())
+                .or(arg.as_deref())
+                .unwrap_or("details");
+            if let Some(vm) = crate::state::ViewMode::parse(vm_str) {
+                pane.store.set_view_mode(vm);
             }
         }
         "open_path" => {

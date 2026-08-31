@@ -131,27 +131,16 @@ impl FileEntry {
 
 fn icon_for(mime: &str, ext: &str, is_dir: bool) -> String {
     if is_dir {
-        return "folder".to_string();
-    }
-    if mime.starts_with("image/") {
-        return "image".to_string();
-    }
-    if mime.starts_with("video/") {
-        return "video".to_string();
-    }
-    if mime.starts_with("audio/") {
-        return "audio".to_string();
-    }
-    if mime == "application/pdf" {
-        return "file:pdf".to_string();
-    }
-    if mime.contains("zip") || mime.contains("archive") || ext == "tar" || ext == "gz" {
-        return "file:zip".to_string();
+        return "icon:folder".to_string();
     }
     if ext.is_empty() {
         return "file:·".to_string();
     }
-    format!("file:{ext}")
+    // Use file-badge for every file (badge shows extension); mime is still stored for filtering.
+    // Truncate long extensions (e.g. "markdown" → "mark").
+    let mut badge = ext.to_lowercase();
+    badge.truncate(4);
+    format!("file:{badge}")
 }
 
 /// Scan `dir`, returning entries sorted per `sort`. Missing or unreadable dir
