@@ -26,6 +26,11 @@ Built on **libyggterm** (Tier A site — `yggterm` is the browser, `libyggterm` 
 
 ## Quick Start
 
+```sh
+curl -fsSL https://raw.githubusercontent.com/yggdrasilhq/yggterm/main/scripts/install.sh | sh
+ynpx @ygghq/yfiles
+```
+
 ### Launching yfiles
 ```bash
 # Launch interactive visual file manager in current directory

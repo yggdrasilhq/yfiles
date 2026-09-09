@@ -6,7 +6,6 @@
 //! the surface alive via control pings.
 
 mod fs_engine;
-mod manifest;
 mod osc;
 mod server;
 mod state;
@@ -187,7 +186,6 @@ fn ensure_daemon() -> Result<String> {
 }
 
 fn run_daemon() -> Result<()> {
-    manifest::write_best_effort();
     let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
     let store = state::Store::new(home);
     let server = server::spawn(store)?;
