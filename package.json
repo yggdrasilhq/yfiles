@@ -1,6 +1,6 @@
 {
   "name": "@ygghq/yfiles",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "yfiles - the yggdrasilhq build, delivered by ynpm",
   "bin": {
     "yfiles": "bin/yfiles"
@@ -10,17 +10,23 @@
     "finalize.mjs"
   ],
   "optionalDependencies": {
-    "@ygghq/yfiles-linux-x64": "0.1.0",
-    "@ygghq/yfiles-linux-arm64": "0.1.0",
-    "@ygghq/yfiles-darwin-x64": "0.1.0",
-    "@ygghq/yfiles-darwin-arm64": "0.1.0",
-    "@ygghq/yfiles-win32-x64": "0.1.0",
-    "@ygghq/yfiles-win32-arm64": "0.1.0"
+    "@ygghq/yfiles-linux-x64": "0.1.1",
+    "@ygghq/yfiles-linux-arm64": "0.1.1",
+    "@ygghq/yfiles-darwin-x64": "0.1.1",
+    "@ygghq/yfiles-darwin-arm64": "0.1.1",
+    "@ygghq/yfiles-win32-x64": "0.1.1",
+    "@ygghq/yfiles-win32-arm64": "0.1.1"
   },
   "scripts": {
     "postinstall": "node ./finalize.mjs"
   },
+  "ynpm": {
+    "build": "cargo build --release",
+    "bins": { "yfiles": "target/release/yfiles" },
+    "watch": "@ygghq/yfiles"
+  },
   "yggterm": {
+    "schema": 1,
     "app": {
       "name": "yfiles",
       "label": "Yfiles",
